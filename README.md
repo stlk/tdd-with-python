@@ -19,9 +19,10 @@ To run the unit tests
 ---
 python3 manage.py test lists
 
-
-
+SSH
+---
 ssh -i aws-linux.pem ubuntu@ec2-54-194-221-30.eu-west-1.compute.amazonaws.com
 
-
-fab deploy:host=ubuntu@lists-staging.rousek.name -i /home/josef/Documents/aws-linux.pem
+Deploy
+---
+fab deploy:host=ubuntu@lists-staging.rousek.name -i /home/stlk/.ssh/aws-linux.pem
