@@ -8,11 +8,16 @@ class List(models.Model):
     def get_absolute_url(self):
         return resolve_url('view_list', self.id)
 
+    @property
+    def name(self):
+        return self.item_set.all()[0].text
+
 class Item(models.Model):
     text = models.TextField()
     list = models.ForeignKey(List)
 
     class Meta:
+        ordering = ('id',)
         unique_together = ('list', 'text')
 
     def __str__(self):
