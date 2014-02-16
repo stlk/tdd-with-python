@@ -1,8 +1,18 @@
-from django.test import LiveServerTestCase
+from datetime import datetime
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support.ui import WebDriverWait
+import os
 import sys
+import time
+
+from django.test import LiveServerTestCase
 from .server_tools import reset_database
+
+DEFAULT_WAIT = 3
+SCREEN_DUMP_LOCATION = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), 'screendumps')
+)
 
 
 class FunctionalTest(LiveServerTestCase):
@@ -29,10 +39,54 @@ class FunctionalTest(LiveServerTestCase):
             reset_database(self.server_host)
 
         self.browser = webdriver.Firefox()
-        self.browser.implicitly_wait(3)
+        self.browser.implicitly_wait(DEFAULT_WAIT)
 
     def tearDown(self):
+        if not self._outcomeForDoCleanups.success:
+            if not os.path.exists(SCREEN_DUMP_LOCATION):
+                os.makedirs(SCREEN_DUMP_LOCATION)
+            for ix, handle in enumerate(self.browser.window_handles):
+                self._windowid = ix
+                self.browser.switch_to_window(handle)
+                self.take_screenshot()
+                self.dump_html()
         self.browser.quit()
+        super().tearDown()
+
+
+    def _get_filename(self):
+        timestamp = datetime.now().isoformat().replace(':', '.')[:19]
+        return '{folder}/{classname}.{method}-window{windowid}-{timestamp}'.format(
+            folder=SCREEN_DUMP_LOCATION,
+            classname=self.__class__.__name__,
+            method=self._testMethodName,
+            windowid=self._windowid,
+            timestamp=timestamp
+        )
+
+
+    def take_screenshot(self):
+        filename = self._get_filename() + '.png'
+        print('screenshotting to', filename)
+        self.browser.get_screenshot_as_file(filename)
+
+
+    def dump_html(self):
+        filename = self._get_filename() + '.html'
+        print('dumping page HTML to', filename)
+        with open(filename, 'w') as f:
+            f.write(self.browser.page_source)
+
+
+    def wait_for(self, function_with_assertion, timeout=DEFAULT_WAIT):
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                return function_with_assertion()
+            except (AssertionError, WebDriverException):
+                pass
+        # one more try, which will raise any errors if they are outstanding
+        return function_with_assertion()
 
 
     def get_item_input_box(self):
