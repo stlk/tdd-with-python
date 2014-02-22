@@ -13,20 +13,31 @@
         {% endfor %}
     </table>
 
-    <section>
-        <form method="POST" action="{% url 'share_list' list.id %}">
-            <input name="email" type="email" placeholder="your@friends-email.com" />
-            <inut type="submit" />
-            {% csrf_token %}
-        </form>
-    </section>
+    {% if list.owner %}
+        <p>List owner: <span id="id_list_owner">{{ list.owner.email }}</span><p>
+    {% endif %}
 
-    <section>
-    <h2>Shared with:</h2>
-        <ul class="list-sharee">
-            {% for item in list.shared_with.all %}
-                <li>{{ item.email }}</li>
+{% endblock %}
+
+{% block extra_content %}
+<div class="row">
+
+    <div class="col-md-6">
+        <h3>Shared with</h3>
+        <ul>
+            {% for sharee in list.shared_with.all %}
+                <li class="list-sharee">{{ sharee.email }}</li>
             {% endfor %}
         </ul>
-    </section>
+    </div>
+
+    <div class="col-md-4 col-md-offset-1">
+        <h3>Share this list:</h3>
+        <form class="form-inline" method="POST" action="{% url 'share_list' list.id %}" >
+            <input name="email" placeholder="your@friends-email.com" />
+            {% csrf_token %}
+        </form>
+    </div>
+
+</div>
 {% endblock %}
