@@ -83,3 +83,16 @@ class ListAndItemModelsTest(TestCase):
         Item.objects.create(list=list_, text='first item')
         Item.objects.create(list=list_, text='second item')
         self.assertEqual(list_.name, 'first item')
+
+    def test_sharing_list(self):
+        user = User.objects.create(email='a@b.com')
+        list_ = List.objects.create()
+        list_.shared_with.add('a@b.com')
+        self.assertIn(user, list_.shared_with.all())
+
+    def test_user_sees_shared_list(self):
+        owner = User.objects.create(email='a@b.com')
+        sharee = User.objects.create(email='b@b.com')
+        list_ = List.objects.create(owner=owner)
+        list_.shared_with.add(sharee)
+        self.assertIn(list_, sharee.shared_with.all())

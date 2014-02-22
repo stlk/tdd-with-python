@@ -12,7 +12,6 @@ from lists.forms import (
 from lists.models import Item, List
 from lists.views import new_list
 
-
 class HomePageTest(TestCase):
 
     def test_home_page_renders_home_template(self):
@@ -181,8 +180,27 @@ class MyListsTest(TestCase):
         response = self.client.get('/lists/users/a@b.com/')
         self.assertTemplateUsed(response, 'my_lists.html')
 
-
     def test_passes_owner_to_template(self):
         user = User.objects.create(email='a@b.com')
         response = self.client.get('/lists/users/a@b.com/')
         self.assertEqual(response.context['owner'], user)
+
+    def test_sharing_list_redirects(self):
+        user = User.objects.create(email='a@b.com')
+        list_ = List.objects.create(owner=user)
+
+        response = self.client.post(
+            '/lists/%d/share/' % list_.id,
+            data={'email': user.email}
+            )
+        self.assertRedirects(response, '/lists/%d/' % (list_.id,))
+
+    def test_sharing_list(self):
+        user = User.objects.create(email='a@b.com')
+        list_ = List.objects.create(owner=user)
+
+        response = self.client.post(
+            '/lists/%d/share/' % list_.id,
+            data={'email': user.email}
+            )
+        self.assertIn(user, list_.shared_with.all())
